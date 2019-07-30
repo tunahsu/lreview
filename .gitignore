@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.flaskenv
+*.db
+*.pyc
+*.pyo
+env/
+migrations/
+env*
