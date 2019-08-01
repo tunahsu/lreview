@@ -9,20 +9,19 @@ from lreview.apis.v1.schemas import user_schema, post_schema, posts_schema
 
 
 def get_post_body():
-    data = request.get_json()
-    body = data.get('body')
+    body = request.form.get('body')
     if body is None or str(body).strip() == '':
-        raise ValidationError('The post body was empty or invalid.')
+        raise ValidationError('Post body was empty or invalid.')
     return body
 
 
 class Register(MethodView):
     def post(self):
-        email = request.json.get('email')
-        username = request.json.get('username')
-        password = request.json.get('password')
-        name = request.json.get('name')
-        birthday = request.json.get('birthday')
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        name = request.form.get('name')
+        birthday = request.form.get('birthday')
         if email is None or username is None or password is None or name is None or birthday is None:
             return api_abort(400, message='Missing arguments.')
         if User.query.filter_by(email=email).first() is not None:
@@ -37,16 +36,16 @@ class Register(MethodView):
 
 class AuthTokenAPI(MethodView):
     def post(self):
-        grant_type = request.json.get('grant_type')
-        username = request.json.get('username')
-        password = request.json.get('password')
+        grant_type = request.form.get('grant_type')
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         if grant_type is None or grant_type.lower() != 'password':
-            return api_abort(code=400, message='The grant type must be password.')
+            return api_abort(code=400, message='Grant type must be password.')
 
         user = User.query.filter_by(username=username).first()
         if user is None or not user.validate_password(password):
-            return api_abort(code=400, message='Either the username or password was invalid.')
+            return api_abort(code=400, message='Username or password was invalid.')
 
         token, expiration = generate_token(user)
 
@@ -67,12 +66,41 @@ class UserAPI(MethodView):
         return jsonify(user_schema(g.current_user))
 
 
+class PostAPI(MethodView):
+    decorators = [auth_required]
+
+    def get(self, post_id):
+        """Get post."""
+        post = Post.query.get_or_404(post_id)
+        if g.current_user != post.user:
+            return api_abort(403)
+        return jsonify(post_schema(post))
+
+    def put(self, post_id):
+        """Edit post."""
+        post = Post.query.get_or_404(post_id)
+        if g.current_user != post.user:
+            return api_abort(403)
+        post.body = get_post_body()
+        db.session.commit()
+        return '', 204
+
+    def delete(self, post_id):
+        """Delete post."""
+        post = Post.query.get_or_404(post_id)
+        if g.current_user != post.user:
+            return api_abort(403)
+        db.session.delete(post)
+        db.session.commit()
+        return '', 204
+
+
 class PostsAPI(MethodView):
     decorators = [auth_required]
 
     def get(self):
         page = request.args.get('page', 1, type=int)
-        per_page = 5
+        per_page = 6
         pagination = Post.query.with_parent(g.current_user).paginate(page, per_page)
         posts = pagination.items
         current = url_for('.posts', page=page, _external=True)
@@ -98,3 +126,4 @@ api_v1.add_url_rule('/register', view_func=Register.as_view('register'), methods
 api_v1.add_url_rule('/oauth/token', view_func=AuthTokenAPI.as_view('token'), methods=['POST'])
 api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET'])
 api_v1.add_url_rule('/user/posts', view_func=PostsAPI.as_view('posts'), methods=['GET', 'POST'])
+api_v1.add_url_rule('/user/post/<int:post_id>', view_func=PostAPI.as_view('post'), methods=['GET', 'PUT', 'DELETE'])

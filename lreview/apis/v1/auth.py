@@ -28,13 +28,12 @@ def validate_token(token):
 
 
 def get_token():
-    # Flask/Werkzeug do not recognize any authentication types
-    # other than Basic or Digest, so here we parse the header by hand.
+    #  Parse the header by hand (Flask/Werkzeug do not recognize any authentication types)
     if 'Authorization' in request.headers:
         try:
             token_type, token = request.headers['Authorization'].split(None, 1)
         except ValueError:
-            # The Authorization header is either empty or has no token
+            # Authorization header is empty or has no token
             token_type = token = None
     else:
         token_type = token = None
@@ -47,13 +46,9 @@ def auth_required(f):
     def decorated(*args, **kwargs):
         token_type, token = get_token()
 
-        # Flask normally handles OPTIONS requests on its own, but in the
-        # case it is configured to forward those to the application, we
-        # need to ignore authentication headers and let the request through
-        # to avoid unwanted interactions with CORS.
         if request.method != 'OPTIONS':
             if token_type is None or token_type.lower() != 'bearer':
-                return api_abort(400, 'The token type must be bearer.')
+                return api_abort(400, 'Token type must be bearer.')
             if token is None:
                 return token_missing()
             if not validate_token(token):

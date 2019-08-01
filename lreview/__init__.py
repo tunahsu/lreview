@@ -5,12 +5,10 @@ from flask import Flask, request
 from lreview.setting import config
 from lreview.extensions import db, login_manager, migrate
 from lreview.apis.v1 import api_v1
+from lreview.apis.v1.errors import api_abort
 
-# from lreview.models import Admin, Category
 
 # when use [flask run], it will automatically invoke the function named create_app() / make_app()
-
-
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.getenv('FLASK_CONFIG', 'development')
@@ -18,17 +16,12 @@ def create_app(config_name=None):
     app = Flask('lreview')
     app.config.from_object(config[config_name])
 
-    register_logging(app)
     register_extensions(app)
     register_blueprints(app)
     register_errors(app)
     register_shell_context(app)
     register_template_context(app)
     return app
-
-
-def register_logging(app):
-    pass
 
 
 def register_extensions(app):
@@ -45,19 +38,15 @@ def register_errors(app):
     # bad request / invalid hostname
     @app.errorhandler(400)
     def bad_request(e):
-        # return render_template('errors/400.html'), 400
-        pass
+        return api_abort(400, message='Bad request XD.')
 
     # server error
     @app.errorhandler(500)
     def internal_server_error(e):
-        # return render_template('errors/500.html'), 500
-        pass
+        return api_abort(400, message='Server error.')
 
 
 # when use [flask shell], it will invoke the function and register the items
-
-
 def register_shell_context(app):
     @app.shell_context_processor
     def make_shell_context():
