@@ -7,6 +7,13 @@ from lreview.apis.v1.errors import api_abort, invalid_token, token_missing
 from lreview.models import User
 
 
+def forget_token(user):
+    expiration = 60 * 60
+    s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+    token = s.dumps({'id': user.id}).decode('ascii')
+    return token, expiration
+
+
 def generate_token(user):
     expiration = 60 * 60 * 24 * 30
     s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)

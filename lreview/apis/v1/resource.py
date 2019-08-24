@@ -1,10 +1,11 @@
 from flask import request, jsonify, Blueprint, g, url_for
+from flask_mail import Message
 from flask.views import MethodView
 from lreview.models import User, Post
-from lreview.extensions import db
+from lreview.extensions import db, mail
 from lreview.apis.v1 import api_v1
 from lreview.apis.v1.errors import api_abort, ValidationError
-from lreview.apis.v1.auth import auth_required, generate_token
+from lreview.apis.v1.auth import auth_required, generate_token, forget_token
 from lreview.apis.v1.schemas import user_schema, post_schema, posts_schema
 
 
@@ -33,6 +34,44 @@ class Register(MethodView):
         db.session.add(user)
         db.session.commit()
         return jsonify({'message': 'Created.'}), 201
+
+
+class Forget(MethodView):
+    def post(self):
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+
+        if user is None:
+            return api_abort(400, message='Email not found.')
+            
+        token, expiration = forget_token(user)
+
+        msg = Message(
+            subject='重設密碼',
+            recipients=[email],
+            html='<h2>哈囉 %s</h2> \
+                <h2>請複製以下驗證碼以重設您的密碼</h2> \
+                <h3>%s</h3> \
+                <h2>請於一小時內完成密碼重置</h2>' % (user.username, token)
+        )
+        mail.send(msg)
+        return jsonify({'message': 'Token has been sent.'}), 200
+
+
+class Reset(MethodView):
+    decorators = [auth_required]
+    
+    def post(self):
+        password = request.form.get('password')
+        user = g.current_user
+
+        if password is None:
+            return api_abort(400, message='Missing arguments.')
+
+        user.set_password(password)
+        db.session.commit()
+        return jsonify({'message': 'Modified.'}), 200
+
 
 class AuthTokenAPI(MethodView):
     def post(self):
@@ -123,7 +162,10 @@ class PostsAPI(MethodView):
 
 
 api_v1.add_url_rule('/register', view_func=Register.as_view('register'), methods=['POST'])
+api_v1.add_url_rule('/forget', view_func=Forget.as_view('forget'), methods=['POST'])
+api_v1.add_url_rule('/reset', view_func=Reset.as_view('reset'), methods=['POST'])
 api_v1.add_url_rule('/oauth/token', view_func=AuthTokenAPI.as_view('token'), methods=['POST'])
 api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET'])
 api_v1.add_url_rule('/user/posts', view_func=PostsAPI.as_view('posts'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/user/post/<int:post_id>', view_func=PostAPI.as_view('post'), methods=['GET', 'PUT', 'DELETE'])
+

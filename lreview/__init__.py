@@ -3,7 +3,7 @@ import click
 from flask import Flask, request
 
 from lreview.setting import config
-from lreview.extensions import db, login_manager, migrate
+from lreview.extensions import db, login_manager, migrate, mail
 from lreview.apis.v1 import api_v1
 from lreview.apis.v1.errors import api_abort
 
@@ -28,6 +28,7 @@ def register_extensions(app):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    mail.init_app(app)
 
 
 def register_blueprints(app):

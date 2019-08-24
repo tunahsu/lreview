@@ -15,6 +15,13 @@ class BaseConfig(object):
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev key')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 465
+    MAIL_USE_SSL = True
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = ('Lreview', MAIL_USERNAME)
+
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = prefix + os.path.join(basedir, 'data-dev.db')

@@ -13,6 +13,7 @@ flask-migrate = "*"
 flask-login = "*"
 flask = "*"
 werkzeug = "==0.15.4"
+flask-mail = "*"
 
 [requires]
 python_version = "3.6"
