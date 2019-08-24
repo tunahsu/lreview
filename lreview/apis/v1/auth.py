@@ -8,7 +8,7 @@ from lreview.models import User
 
 
 def generate_token(user):
-    expiration = 3600
+    expiration = 60 * 60 * 24 * 30
     s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)
     token = s.dumps({'id': user.id}).decode('ascii')
     return token, expiration
