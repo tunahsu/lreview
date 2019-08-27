@@ -19,7 +19,12 @@ def post_schema(post):
         'kind': 'Post',
         'id': post.id,
         'self': url_for('.post', post_id=post.id, _external=True),
+        'title': post.title,
         'body': post.body,
+        'happen_age': post.happen_age,
+        'introspection': post.introspection,
+        'emotion': post.emotion,
+        'score': post.score,
         'user': {
             'kind': 'User',
             'id': post.user.id,

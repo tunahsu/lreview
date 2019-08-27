@@ -26,6 +26,7 @@ class Post(db.Model):
     happen_age = db.Column(db.Integer)
     body = db.Column(db.Text)
     introspection = db.Column(db.Text)
+    emotion = db.Column(db.String(60))
     score = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 

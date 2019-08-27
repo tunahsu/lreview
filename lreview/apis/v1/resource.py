@@ -7,28 +7,29 @@ from lreview.apis.v1 import api_v1
 from lreview.apis.v1.errors import api_abort, ValidationError
 from lreview.apis.v1.auth import auth_required, generate_token, forget_token
 from lreview.apis.v1.schemas import user_schema, post_schema, posts_schema
-
-
-def get_post_body():
-    body = request.form.get('body')
-    if body is None or str(body).strip() == '':
-        raise ValidationError('Post body was empty or invalid.')
-    return body
+import json
 
 
 class Register(MethodView):
     def post(self):
-        email = request.form.get('email')
-        username = request.form.get('username')
-        password = request.form.get('password')
-        name = request.form.get('name')
-        birthday = request.form.get('birthday')
-        if email is None or username is None or password is None or name is None or birthday is None:
+        data = json.loads(request.get_data())
+
+        try:
+            email = data['email']
+            username = data['username']
+            password = data['password']
+            name = data['name']
+            birthday = data['birthday']
+        except:
+            return api_abort(400, message='Missing arguments.')
+        
+        if str(email).strip() == '' or str(username).strip() == '' or str(password).strip() == '' or str(name).strip() == '' or str(birthday).strip() == '':
             return api_abort(400, message='Missing arguments.')
         if User.query.filter_by(email=email).first() is not None:
             return api_abort(400, message='Existing email.') 
         if User.query.filter_by(username=username).first() is not None:
             return api_abort(400, message='Existing user.')
+
         user = User(email=email, username=username, name=name, birthday=birthday)
         user.set_password(password)
         db.session.add(user)
@@ -38,7 +39,8 @@ class Register(MethodView):
 
 class Forget(MethodView):
     def post(self):
-        email = request.form.get('email')
+        data = json.loads(request.get_data())
+        email = data['email']
         user = User.query.filter_by(email=email).first()
 
         if user is None:
@@ -62,7 +64,8 @@ class Reset(MethodView):
     decorators = [auth_required]
     
     def post(self):
-        password = request.form.get('password')
+        data = json.loads(request.get_data())
+        password = data['password']
         user = g.current_user
 
         if password is None:
@@ -75,9 +78,10 @@ class Reset(MethodView):
 
 class AuthTokenAPI(MethodView):
     def post(self):
-        grant_type = request.form.get('grant_type')
-        username = request.form.get('username')
-        password = request.form.get('password')
+        data = json.loads(request.get_data())
+        grant_type = data['grant_type']
+        username = data['username']
+        password = data['password']
 
         if grant_type is None or grant_type.lower() != 'password':
             return api_abort(code=400, message='Grant type must be password.')
@@ -120,7 +124,29 @@ class PostAPI(MethodView):
         post = Post.query.get_or_404(post_id)
         if g.current_user != post.user:
             return api_abort(403)
-        post.body = get_post_body()
+
+        data = json.loads(request.get_data())
+
+        try:
+            title = data['title']
+            body = data['body']
+            happen_age = data['happen_age']
+            introspection = data['introspection']
+            emotion = data['emotion']
+            score = data['score']
+        except:
+            raise ValidationError('Content was empty or invalid.')
+
+        if str(title).strip() == '' or str(body).strip() == '' or str(happen_age).strip() == '' \
+        or str(introspection).strip() == '' or str(score).strip() == '' or str(emotion).strip() == '':
+            raise ValidationError('Content was empty or invalid.')
+        
+        post.title = title
+        post.body = body
+        post.happen_age = happen_age
+        post.introspection = introspection
+        post.emotion = emotion
+        post.score = score
         db.session.commit()
         return '', 204
 
@@ -152,7 +178,23 @@ class PostsAPI(MethodView):
         return jsonify(posts_schema(posts, current, prev, next, pagination))
 
     def post(self):
-        post = Post(body=get_post_body(), user=g.current_user)
+        data = json.loads(request.get_data())
+
+        try:
+            title = data['title']
+            body = data['body']
+            happen_age = data['happen_age']
+            introspection = data['introspection']
+            emotion = data['emotion']
+            score = data['score']
+        except:
+            raise ValidationError('Content was empty or invalid.')
+
+        if str(title).strip() == '' or str(body).strip() == '' or str(happen_age).strip() == '' \
+        or str(introspection).strip() == '' or str(emotion).strip() == '' or str(score).strip() == '':
+            raise ValidationError('Content was empty or invalid.')
+
+        post = Post(title=title, body=body, happen_age=happen_age, introspection=introspection, emotion=emotion, score=score, user=g.current_user)
         db.session.add(post)
         db.session.commit()
         response = jsonify(post_schema(post))
@@ -168,4 +210,3 @@ api_v1.add_url_rule('/oauth/token', view_func=AuthTokenAPI.as_view('token'), met
 api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET'])
 api_v1.add_url_rule('/user/posts', view_func=PostsAPI.as_view('posts'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/user/post/<int:post_id>', view_func=PostAPI.as_view('post'), methods=['GET', 'PUT', 'DELETE'])
-
