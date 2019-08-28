@@ -1,5 +1,6 @@
 from flask import url_for
-from lreview.models import Post
+from lreview.models import Post, Image
+from lreview.extensions import photos
 
 
 def user_schema(user):
@@ -30,7 +31,8 @@ def post_schema(post):
             'id': post.user.id,
             'url': url_for('.user', _external=True),
             'username': post.user.username
-        }
+        },
+        'images': [photos.url(image.filename) for image in post.images]
     }
 
 

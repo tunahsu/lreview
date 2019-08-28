@@ -31,3 +31,11 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    images = db.relationship('Image', backref='post', lazy='dynamic', cascade='all, delete')
+
+
+class Image(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(60))
+    
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))

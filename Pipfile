@@ -14,6 +14,7 @@ flask-login = "*"
 flask = "*"
 werkzeug = "==0.15.4"
 flask-mail = "*"
+flask-uploads = "*"
 
 [requires]
 python_version = "3.6"

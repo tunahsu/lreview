@@ -6,4 +6,5 @@
 *.pyo
 env/
 migrations/
+static/
 env*

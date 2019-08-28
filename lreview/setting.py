@@ -22,6 +22,7 @@ class BaseConfig(object):
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = ('Lreview', MAIL_USERNAME)
 
+    UPLOADED_PHOTOS_DEST = os.path.join(basedir, 'lreview/static/images')
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = prefix + os.path.join(basedir, 'data-dev.db')

@@ -1,13 +1,16 @@
 from flask import request, jsonify, Blueprint, g, url_for
 from flask_mail import Message
 from flask.views import MethodView
-from lreview.models import User, Post
-from lreview.extensions import db, mail
+from lreview.models import User, Post, Image
+from lreview.extensions import db, mail, photos
 from lreview.apis.v1 import api_v1
 from lreview.apis.v1.errors import api_abort, ValidationError
 from lreview.apis.v1.auth import auth_required, generate_token, forget_token
 from lreview.apis.v1.schemas import user_schema, post_schema, posts_schema
+import os
 import json
+import hashlib
+import time
 
 
 class Register(MethodView):
@@ -109,7 +112,7 @@ class PostAPI(MethodView):
         """Get post."""
         post = Post.query.get_or_404(post_id)
         if g.current_user != post.user:
-            return api_abort(403, message='Do not touch me!!', status_code=1)
+            return api_abort(403, message='Do not touch me!!', status_code=-1)
         datas = post_schema(post)
         datas['status_code'] = 0
         return jsonify(datas)
@@ -118,15 +121,14 @@ class PostAPI(MethodView):
         """Edit post."""
         post = Post.query.get_or_404(post_id)
         if g.current_user != post.user:
-            return api_abort(403, message='Do not touch me!!', status_code=1)
+            return api_abort(403, message='Do not touch me!!', status_code=-1)
 
-        data = json.loads(request.get_data())
-        title = data['title']
-        body = data['body']
-        happen_age = data['happen_age']
-        introspection = data['introspection']
-        emotion = data['emotion']
-        score = data['score']
+        title = request.form.get('title')
+        body = request.form.get('body')
+        happen_age = request.form.get('happen_age')
+        introspection = request.form.get('introspection')
+        emotion = request.form.get('emotion')
+        score = request.form.get('score')
         
         post.title = title
         post.body = body
@@ -135,13 +137,26 @@ class PostAPI(MethodView):
         post.emotion = emotion
         post.score = score
         db.session.commit()
+
+        if request.files.getlist('images'):
+            for filename in request.files.getlist('images'):
+                name = hashlib.md5((g.current_user.username + str(time.time())).encode('UTF-8'))
+                name = name.hexdigest()[:15]
+                filename = photos.save(filename, name=name + '.')
+
+                image = Image(filename=filename, post=post)
+                db.session.add(image)
+                db.session.commit()
         return jsonify({'message': 'Modified.', 'status_code': 0}), 200
 
     def delete(self, post_id):
         """Delete post."""
         post = Post.query.get_or_404(post_id)
         if g.current_user != post.user:
-            return api_abort(403, message='Do not touch me!!', status_code=1)
+            return api_abort(403, message='Do not touch me!!', status_code=-1)
+        for image in post.images:
+            path = photos.path(image.filename)
+            os.remove(path)
         db.session.delete(post)
         db.session.commit()
         return jsonify({'message': 'Deleted.', 'status_code': 0}), 200
@@ -170,22 +185,33 @@ class PostsAPI(MethodView):
 
 
     def post(self):
-        data = json.loads(request.get_data())
-        title = data['title']
-        body = data['body']
-        happen_age = data['happen_age']
-        introspection = data['introspection']
-        emotion = data['emotion']
-        score = data['score']
+        title = request.form.get('title')
+        body = request.form.get('body')
+        happen_age = request.form.get('happen_age')
+        introspection = request.form.get('introspection')
+        emotion = request.form.get('emotion')
+        score = request.form.get('score')
 
         post = Post(title=title, body=body, happen_age=happen_age, introspection=introspection, emotion=emotion, score=score, user=g.current_user)
         db.session.add(post)
         db.session.commit()
+
+        if request.files.getlist('images'):
+            for filename in request.files.getlist('images'):
+                name = hashlib.md5((g.current_user.username + str(time.time())).encode('UTF-8'))
+                name = name.hexdigest()[:15]
+                filename = photos.save(filename, name=name + '.')
+
+                image = Image(filename=filename, post=post)
+                db.session.add(image)
+                db.session.commit()
+
         datas = post_schema(post)
         datas['status_code'] = 0
         response = jsonify(datas)
         response.status_code = 201
         response.headers['Location'] = url_for('.posts', post_id=post.id, _external=True)
+
         return response
 
 

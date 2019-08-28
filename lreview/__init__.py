@@ -1,9 +1,10 @@
 import os
 import click
 from flask import Flask, request
+from flask_uploads import configure_uploads, patch_request_class
 
 from lreview.setting import config
-from lreview.extensions import db, login_manager, migrate, mail
+from lreview.extensions import db, login_manager, migrate, mail, photos
 from lreview.apis.v1 import api_v1
 from lreview.apis.v1.errors import api_abort
 
@@ -30,6 +31,10 @@ def register_extensions(app):
     migrate.init_app(app, db)
     mail.init_app(app)
 
+    # upload config
+    configure_uploads(app, photos)
+    patch_request_class(app)  # set maximum file size, default is 16MB
+
 
 def register_blueprints(app):
     app.register_blueprint(api_v1, url_prefix='/api/v1')
@@ -51,8 +56,8 @@ def register_errors(app):
 def register_shell_context(app):
     @app.shell_context_processor
     def make_shell_context():
-        from lreview.models import User, Post
-        return dict(db=db, User=User, Post=Post)
+        from lreview.models import User, Post, Image
+        return dict(db=db, User=User, Post=Post, Image=Image)
 
 
 def register_template_context(app):
