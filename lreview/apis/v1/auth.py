@@ -55,7 +55,7 @@ def auth_required(f):
 
         if request.method != 'OPTIONS':
             if token_type is None or token_type.lower() != 'bearer':
-                return api_abort(400, 'Token type must be bearer.')
+                return api_abort(400, message='Token type must be bearer.', status_code=2)
             if token is None:
                 return token_missing()
             if not validate_token(token):

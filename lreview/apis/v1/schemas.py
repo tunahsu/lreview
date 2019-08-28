@@ -34,14 +34,14 @@ def post_schema(post):
     }
 
 
-def posts_schema(posts, current, prev, next, pagination):
+def posts_schema(posts):
     return {
         'kind': 'PostCollection',
         'posts': [post_schema(post) for post in posts],
-        'first': url_for('.posts', page=1, _external=True),
-        'last': url_for('.posts', page=pagination.pages, _external=True),
-        'self': current,
-        'prev': prev,
-        'next': next,
-        'count': pagination.total
+        # 'first': url_for('.posts', page=1, _external=True),
+        # 'last': url_for('.posts', page=pagination.pages, _external=True),
+        'self': url_for('.posts', _external=True),
+        # 'prev': prev,
+        # 'next': next,
+        'count': posts.count()
     }

@@ -16,6 +16,7 @@ def api_abort(code, message=None, **kwargs):
 def invalid_token():
     response = api_abort(
         401,
+        status_code=1,
         error='invalid_token',
         error_description='Token was expired or invalid.')
     response.headers['WWW-Authenticate'] = 'Bearer'
@@ -23,7 +24,7 @@ def invalid_token():
 
 
 def token_missing():
-    response = api_abort(401)
+    response = api_abort(401, message='Token missing', status_code=3)
     response.headers['WWW-Authenticate'] = 'Bearer'
     return response
 

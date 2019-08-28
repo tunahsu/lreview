@@ -58,6 +58,6 @@ def register_shell_context(app):
 def register_template_context(app):
     @app.context_processor
     def make_template_context():
+        from lreview.models import User
         user = User.query.first()
-        categories = Category.query.order_by(Category.name).all()
-        return dict(user=user, categories=categories)
+        return dict(user=user)
