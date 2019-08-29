@@ -7,8 +7,10 @@ def user_schema(user):
     return {
         'kind': 'User',
         'id': user.id,
+        'email': user.email,
         'username': user.username,
         'name': user.name,
+        'birthday': user.birthday,
         'self': url_for('.user', _external=True),
         'posts_url': url_for('.posts', _external=True),
         'posts_count': user.posts.count()
