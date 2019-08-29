@@ -235,6 +235,17 @@ class PostsAPI(MethodView):
         return response
 
 
+class ImageTest(MethodView):
+    def post(self):
+        if request.files.getlist('images'):
+            datas = []
+            for filename in request.files.getlist('images'):
+                name = hashlib.md5(('g.current_user.username' + str(time.time())).encode('UTF-8'))
+                name = name.hexdigest()[:15]
+                filename = photos.save(filename, name=name + '.')
+                datas.append(photos.url(filename))
+        return jsonify({'images': datas})
+
 api_v1.add_url_rule('/register', view_func=Register.as_view('register'), methods=['POST'])
 api_v1.add_url_rule('/update', view_func=Update.as_view('update'), methods=['PUT'])
 api_v1.add_url_rule('/forget', view_func=Forget.as_view('forget'), methods=['POST'])
@@ -243,3 +254,4 @@ api_v1.add_url_rule('/oauth/token', view_func=AuthTokenAPI.as_view('token'), met
 api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET'])
 api_v1.add_url_rule('/user/posts', view_func=PostsAPI.as_view('posts'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/user/post/<int:post_id>', view_func=PostAPI.as_view('post'), methods=['GET', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/image_test', view_func=ImageTest.as_view('image_test'), methods=['POST'])
