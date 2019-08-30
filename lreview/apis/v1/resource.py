@@ -141,7 +141,7 @@ class Avatar(MethodView):
             user.avatar = filename
             db.session.commit()
         except:
-            api_abort(401, message='Avatar missing.', status_code=-1)
+            return api_abort(401, message='Avatar missing.', status_code=-1)
         return jsonify({'message': 'Uploaded.', 'avatar_url': photos.url(filename), 'status_code': 0}), 200 
 
 
