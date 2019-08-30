@@ -10,6 +10,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     name = db.Column(db.String(16), nullable=False)
     birthday = db.Column(db.String(10), nullable=False)
+    avatar = db.Column(db.String(64), unique=True, nullable=True)
 
     posts = db.relationship('Post', backref='user', lazy='dynamic')
 
@@ -22,11 +23,11 @@ class User(db.Model):
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(60))
+    title = db.Column(db.String(64))
     happen_age = db.Column(db.Integer)
     body = db.Column(db.Text)
     introspection = db.Column(db.Text)
-    emotion = db.Column(db.String(60))
+    emotion = db.Column(db.String(64))
     score = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -36,6 +37,6 @@ class Post(db.Model):
 
 class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(60))
+    filename = db.Column(db.String(64))
     
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))

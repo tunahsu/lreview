@@ -34,26 +34,6 @@ class Register(MethodView):
         return jsonify({'message': 'Created.', 'status_code': 0}), 201
 
 
-class Update(MethodView):
-    decorators = [auth_required]
-
-    def put(self):
-        data = json.loads(request.get_data())
-        email = data['email']
-        name = data['name']
-        birthday = data['birthday']
-        
-        user = g.current_user
-        if email != user.email and User.query.filter_by(email=email).first() is not None:
-            return api_abort(400, message='Existing email.', status_code=-1) 
-
-        user.email = email
-        user.name = name
-        user.birthday = birthday
-        db.session.commit()
-        return jsonify({'message': 'Modified.', 'status_code': 0}), 200
-
-
 class Forget(MethodView):
     def post(self):
         data = json.loads(request.get_data())
@@ -120,9 +100,49 @@ class UserAPI(MethodView):
     decorators = [auth_required]
 
     def get(self):
-        datas = user_schema(g.current_user)
+        user = g.current_user
+        datas = user_schema(user)
         datas['status_code'] = 0
+        datas['avatar'] = photos.url(user.avatar) if user.avatar else None
         return jsonify(datas)
+
+    def put(self):
+        data = json.loads(request.get_data())
+        email = data['email']
+        name = data['name']
+        birthday = data['birthday']
+        
+        user = g.current_user
+        if email != user.email and User.query.filter_by(email=email).first() is not None:
+            return api_abort(400, message='Existing email.', status_code=-1) 
+
+        user.email = email
+        user.name = name
+        user.birthday = birthday
+        db.session.commit()
+        return jsonify({'message': 'Modified.', 'status_code': 0}), 200
+
+
+class Avatar(MethodView):
+    decorators = [auth_required]
+
+    def put(self):
+        try:
+            user = g.current_user
+            filename = request.files.getlist('avatar')[0]
+            name = hashlib.md5((user.username + str(time.time())).encode('UTF-8'))
+            name = name.hexdigest()[:15]
+            filename = photos.save(filename, name=name + '.')
+
+            if user.avatar is not None:
+                path = photos.path(user.avatar)
+                os.remove(path)
+
+            user.avatar = filename
+            db.session.commit()
+        except:
+            api_abort(401, message='Avatar missing.', status_code=-1)
+        return jsonify({'message': 'Uploaded.', 'avatar_url': photos.url(filename), 'status_code': 0}), 200 
 
 
 class PostAPI(MethodView):
@@ -139,8 +159,9 @@ class PostAPI(MethodView):
 
     def put(self, post_id):
         """Edit post."""
+        user = g.current_user
         post = Post.query.get_or_404(post_id)
-        if g.current_user != post.user:
+        if user != post.user:
             return api_abort(403, message='Do not touch me!!', status_code=-1)
 
         title = request.form.get('title')
@@ -160,7 +181,7 @@ class PostAPI(MethodView):
 
         if request.files.getlist('images'):
             for filename in request.files.getlist('images'):
-                name = hashlib.md5((g.current_user.username + str(time.time())).encode('UTF-8'))
+                name = hashlib.md5((user.username + str(time.time())).encode('UTF-8'))
                 name = name.hexdigest()[:15]
                 filename = photos.save(filename, name=name + '.')
 
@@ -205,6 +226,7 @@ class PostsAPI(MethodView):
 
 
     def post(self):
+        user = g.current_user
         title = request.form.get('title')
         body = request.form.get('body')
         happen_age = request.form.get('happen_age')
@@ -212,13 +234,13 @@ class PostsAPI(MethodView):
         emotion = request.form.get('emotion')
         score = request.form.get('score')
 
-        post = Post(title=title, body=body, happen_age=happen_age, introspection=introspection, emotion=emotion, score=score, user=g.current_user)
+        post = Post(title=title, body=body, happen_age=happen_age, introspection=introspection, emotion=emotion, score=score, user=user)
         db.session.add(post)
         db.session.commit()
 
         if request.files.getlist('images'):
             for filename in request.files.getlist('images'):
-                name = hashlib.md5((g.current_user.username + str(time.time())).encode('UTF-8'))
+                name = hashlib.md5((user.username + str(time.time())).encode('UTF-8'))
                 name = name.hexdigest()[:15]
                 filename = photos.save(filename, name=name + '.')
 
@@ -231,27 +253,14 @@ class PostsAPI(MethodView):
         response = jsonify(datas)
         response.status_code = 201
         response.headers['Location'] = url_for('.posts', post_id=post.id, _external=True)
-
         return response
 
 
-class ImageTest(MethodView):
-    def post(self):
-        if request.files.getlist('images'):
-            datas = []
-            for filename in request.files.getlist('images'):
-                name = hashlib.md5(('g.current_user.username' + str(time.time())).encode('UTF-8'))
-                name = name.hexdigest()[:15]
-                filename = photos.save(filename, name=name + '.')
-                datas.append(photos.url(filename))
-        return jsonify({'images': datas})
-
 api_v1.add_url_rule('/register', view_func=Register.as_view('register'), methods=['POST'])
-api_v1.add_url_rule('/update', view_func=Update.as_view('update'), methods=['PUT'])
 api_v1.add_url_rule('/forget', view_func=Forget.as_view('forget'), methods=['POST'])
 api_v1.add_url_rule('/reset', view_func=Reset.as_view('reset'), methods=['POST'])
 api_v1.add_url_rule('/oauth/token', view_func=AuthTokenAPI.as_view('token'), methods=['POST'])
-api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET'])
+api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET', 'PUT'])
+api_v1.add_url_rule('/user/avatar', view_func=Avatar.as_view('avatar'), methods=['PUT'])
 api_v1.add_url_rule('/user/posts', view_func=PostsAPI.as_view('posts'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/user/post/<int:post_id>', view_func=PostAPI.as_view('post'), methods=['GET', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/image_test', view_func=ImageTest.as_view('image_test'), methods=['POST'])
