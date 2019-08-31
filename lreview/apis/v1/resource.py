@@ -60,7 +60,7 @@ class Forget(MethodView):
 class Reset(MethodView):
     decorators = [auth_required]
     
-    def post(self):
+    def put(self):
         data = json.loads(request.get_data())
         password = data['password']
         user = g.current_user
@@ -257,7 +257,7 @@ class PostsAPI(MethodView):
 
 api_v1.add_url_rule('/register', view_func=Register.as_view('register'), methods=['POST'])
 api_v1.add_url_rule('/forget', view_func=Forget.as_view('forget'), methods=['POST'])
-api_v1.add_url_rule('/reset', view_func=Reset.as_view('reset'), methods=['POST'])
+api_v1.add_url_rule('/reset', view_func=Reset.as_view('reset'), methods=['PUT'])
 api_v1.add_url_rule('/oauth/token', view_func=AuthTokenAPI.as_view('token'), methods=['POST'])
 api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET', 'PUT'])
 api_v1.add_url_rule('/user/avatar', view_func=Avatar.as_view('avatar'), methods=['PUT'])
