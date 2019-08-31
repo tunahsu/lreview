@@ -11,6 +11,7 @@ def user_schema(user):
         'username': user.username,
         'name': user.name,
         'birthday': user.birthday,
+        'avatar': photos.url(user.avatar),
         'self': url_for('.user', _external=True),
         'posts_url': url_for('.posts', _external=True),
         'posts_count': user.posts.count()

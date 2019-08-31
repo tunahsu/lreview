@@ -103,7 +103,6 @@ class UserAPI(MethodView):
         user = g.current_user
         datas = user_schema(user)
         datas['status_code'] = 0
-        datas['avatar'] = photos.url(user.avatar) if user.avatar else None
         return jsonify(datas)
 
     def put(self):
