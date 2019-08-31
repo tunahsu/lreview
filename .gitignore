@@ -2,9 +2,6 @@
 .env
 .flaskenv
 *.db
-*.pyc
-*.pyo
-env/
-migrations/
-static/
-env*
+/migrations
+/lreview/static/images/*
+!/lreview/static/images/default

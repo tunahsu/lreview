@@ -48,10 +48,10 @@ class Forget(MethodView):
         msg = Message(
             subject='重設密碼',
             recipients=[email],
-            html='<h2>哈囉 %s</h2> \
-                <h2>請複製以下驗證碼以重設您的密碼</h2> \
-                <h3>%s</h3> \
-                <h2>請於一小時內完成密碼重置</h2>' % (user.username, token)
+            html='<p>哈囉 %s :</p> \
+                <p>請複製以下驗證碼以重設您的密碼</p> \
+                <b>%s</b> \
+                <p>請於一小時內完成密碼重置</p>' % (user.username, token)
         )
         mail.send(msg)
         return jsonify({'message': 'Token has been sent.', 'status_code': 0}), 200

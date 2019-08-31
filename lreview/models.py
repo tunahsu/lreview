@@ -10,7 +10,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     name = db.Column(db.String(16), nullable=False)
     birthday = db.Column(db.String(10), nullable=False)
-    avatar = db.Column(db.String(64), unique=True, nullable=True)
+    avatar = db.Column(db.String(64), default='default/defaultAvatar.png')
 
     posts = db.relationship('Post', backref='user', lazy='dynamic')
 
