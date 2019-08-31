@@ -133,7 +133,7 @@ class Avatar(MethodView):
             name = name.hexdigest()[:15]
             filename = photos.save(filename, name=name + '.')
 
-            if user.avatar is not None:
+            if user.avatar != 'default/defaultAvatar.png':
                 path = photos.path(user.avatar)
                 os.remove(path)
 
