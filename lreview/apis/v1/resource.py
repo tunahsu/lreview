@@ -6,7 +6,7 @@ from lreview.extensions import db, mail, photos
 from lreview.apis.v1 import api_v1
 from lreview.apis.v1.errors import api_abort, ValidationError
 from lreview.apis.v1.auth import auth_required, generate_token, forget_token
-from lreview.apis.v1.schemas import user_schema, post_schema, posts_schema
+from lreview.apis.v1.schemas import user_schema, post_schema, posts_schema, curve_schema
 import os
 import json
 import hashlib
@@ -255,6 +255,17 @@ class PostsAPI(MethodView):
         return response
 
 
+class Curve(MethodView):
+    decorators = [auth_required]
+
+    def get(self):
+        user = g.current_user
+        posts = user.posts
+        datas = curve_schema(posts)
+        datas['status_code'] = 0
+        return jsonify(datas)
+
+
 api_v1.add_url_rule('/register', view_func=Register.as_view('register'), methods=['POST'])
 api_v1.add_url_rule('/forget', view_func=Forget.as_view('forget'), methods=['POST'])
 api_v1.add_url_rule('/reset', view_func=Reset.as_view('reset'), methods=['POST'])
@@ -263,3 +274,4 @@ api_v1.add_url_rule('/user', view_func=UserAPI.as_view('user'), methods=['GET', 
 api_v1.add_url_rule('/user/avatar', view_func=Avatar.as_view('avatar'), methods=['PUT'])
 api_v1.add_url_rule('/user/posts', view_func=PostsAPI.as_view('posts'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/user/post/<int:post_id>', view_func=PostAPI.as_view('post'), methods=['GET', 'PUT', 'DELETE'])
+api_v1.add_url_rule('user/curve', view_func=Curve.as_view('curve'), methods=['GET'])

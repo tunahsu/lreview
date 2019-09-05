@@ -50,3 +50,11 @@ def posts_schema(posts):
         # 'next': next,
         'count': posts.count()
     }
+
+
+def curve_schema(posts):
+    return {
+        'kind': 'CurveCollection',
+        'self': url_for('.curve', _external=True),
+        'curve': [{'happen_age': post.happen_age, 'score': post.score} for post in posts]
+    }
