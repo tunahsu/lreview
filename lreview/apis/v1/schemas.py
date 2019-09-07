@@ -35,7 +35,7 @@ def post_schema(post):
             'url': url_for('.user', _external=True),
             'username': post.user.username
         },
-        'images': [photos.url(image.filename) for image in post.images]
+        'images': [photos.url(image.filename) for image in post.images] if post.images.count() > 0 else [photos.url('default/defaultStory.png')]
     }
 
 
