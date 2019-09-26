@@ -53,8 +53,9 @@ def posts_schema(posts):
 
 
 def curve_schema(posts):
+
     return {
         'kind': 'CurveCollection',
         'self': url_for('.curve', _external=True),
-        'curve': [{'happen_age': post.happen_age, 'score': post.score} for post in posts]
+        'curve': [{'title': post.title, 'happen_age': post.happen_age, 'score': post.score, 'cover': photos.url(post.images[0].filename) if post.images.count() > 0 else photos.url('default/defaultStory.png') } for post in posts]
     }
