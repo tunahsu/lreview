@@ -11,6 +11,10 @@ import os
 import json
 import hashlib
 import time
+import functools
+
+
+url_for = functools.partial(url_for, _scheme='https')
 
 
 class Register(MethodView):

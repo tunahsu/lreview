@@ -1,6 +1,10 @@
 from flask import url_for
 from lreview.models import Post, Image
 from lreview.extensions import photos
+import functools
+
+
+url_for = functools.partial(url_for, _scheme='https')
 
 
 def user_schema(user):
